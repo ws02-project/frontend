@@ -1,0 +1,141 @@
+name: Frontend CI/CD
+
+# This workflow is for frontend when in its own repository
+# Place this file in: frontend/.github/workflows/ci.yml
+
+on:
+  push:
+    branches: [main, master, develop]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REGISTRY: 158670175038.dkr.ecr.ap-southeast-1.amazonaws.com
+  ECR_REPOSITORY: docker
+  SERVICE_NAME: frontend
+  IMAGE_NAME: frontend
+
+permissions:
+  id-token: write # Required for OIDC authentication
+  contents: read # Required to checkout code
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    name: Build and Push Docker Image
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Debug - Check AWS_ROLE_ARN variable
+        run: |
+          echo "AWS_ROLE_ARN value: ${{ vars.AWS_ROLE_ARN }}"
+          if [ -z "${{ vars.AWS_ROLE_ARN }}" ]; then
+            echo "⚠️  WARNING: AWS_ROLE_ARN variable is not set!"
+            echo "Please add it as a repository variable:"
+            echo "Repository → Settings → Secrets and variables → Actions → Variables"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::158670175038:role/registry-github-actions-role"
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: meta
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
+            IMAGE_TAG=${GITHUB_REF#refs/tags/v}
+          else
+            IMAGE_TAG=${GITHUB_SHA::8}
+          fi
+          echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_NAME }}-$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image_latest=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_NAME }}-latest" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies for Trivy scan
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm install --frozen-lockfile || pnpm install
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0' # Don't fail on filesystem scan, just report
+
+      - name: Build Docker image
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.image }}
+        run: |
+          echo "Building Docker image: $IMAGE_NAME"
+          # No build args needed - config is injected at runtime via Helm values
+          docker build -t $IMAGE_NAME -f Dockerfile .
+          docker tag $IMAGE_NAME ${{ steps.meta.outputs.image_latest }}
+          # Also tag with a simple local name for Trivy scanning
+          docker tag $IMAGE_NAME ${{ env.SERVICE_NAME }}:scan
+
+      - name: Run Trivy image scan (Table output - Show all vulnerabilities)
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true # Show results even if vulnerabilities found
+        with:
+          scan-type: 'image'
+          image-ref: '${{ env.SERVICE_NAME }}:scan'
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          exit-code: '0' # Don't fail here, just show results
+
+      - name: Run Trivy image scan (Fail on CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: '${{ env.SERVICE_NAME }}:scan'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1' # Fail pipeline if CRITICAL or HIGH vulnerabilities found
+
+      - name: Push Docker image to ECR
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.image }}
+          IMAGE_LATEST: ${{ steps.meta.outputs.image_latest }}
+        run: |
+          echo "Pushing Docker image: $IMAGE_NAME"
+          docker push $IMAGE_NAME
+          docker push $IMAGE_LATEST
+
+      - name: Image details
+        run: |
+          echo "✅ Successfully pushed Frontend image:"
+          echo "  Image: ${{ steps.meta.outputs.image }}"
+          echo "  Latest: ${{ steps.meta.outputs.image_latest }}"
+
+      - name: Trigger deployment update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          repository: ws02-project/deployments
+          event-type: update-image
+          client-payload: |-
+            {
+              "service": "frontend",
+              "image_tag": "${{ steps.meta.outputs.tag }}",
+              "image_full": "${{ steps.meta.outputs.image }}",
+              "commit_sha": "${{ github.sha }}"
+            }

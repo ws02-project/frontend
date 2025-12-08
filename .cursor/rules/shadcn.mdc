@@ -1,0 +1,80 @@
+---
+description: Rules for using shadcn/ui components in this project
+globs: ["**/*.tsx", "**/*.ts"]
+alwaysApply: true
+---
+
+# shadcn/ui Component Guidelines
+
+## Before Making Any UI Changes
+
+1. **Always use shadcn MCP tools first** to discover available components:
+   - Use `mcp_shadcn_search_items_in_registries` to find relevant components
+   - Use `mcp_shadcn_view_items_in_registries` to see component details and code
+   - Use `mcp_shadcn_get_item_examples_from_registries` to find usage examples
+   - Use `mcp_shadcn_get_add_command_for_items` to get installation commands
+
+2. **Component Discovery Flow**:
+   ```
+   1. Search for component: mcp_shadcn_search_items_in_registries
+   2. View component details: mcp_shadcn_view_items_in_registries  
+   3. Get examples: mcp_shadcn_get_item_examples_from_registries
+   4. Install if needed: Run the add command
+   ```
+
+3. **Available Registries**: `["@shadcn"]`
+
+## UI/UX Best Practices
+
+### Design Principles
+- Use consistent spacing (4, 8, 12, 16, 24, 32px scale)
+- Maintain visual hierarchy with proper typography
+- Use subtle animations for micro-interactions
+- Ensure proper contrast ratios for accessibility
+- Use semantic colors from the theme
+
+### Component Usage
+- Always use shadcn/ui components over custom implementations
+- Use `cn()` utility for conditional classes
+- Leverage variants and sizes from component props
+- Use Tooltip for interactive elements
+- Use Skeleton for loading states
+
+### Color Palette (CSS Variables)
+- `--background` / `--foreground` for base colors
+- `--primary` / `--primary-foreground` for primary actions
+- `--secondary` / `--secondary-foreground` for secondary elements
+- `--muted` / `--muted-foreground` for subdued content
+- `--accent` / `--accent-foreground` for highlights
+- `--destructive` for error states
+
+### Spacing Guidelines
+- Card padding: `p-6`
+- Section gaps: `gap-6` or `gap-8`
+- Element spacing: `gap-2` to `gap-4`
+- Page margins: `px-4` with `container`
+
+### Typography
+- Page titles: `text-3xl font-bold tracking-tight`
+- Section titles: `text-xl font-semibold`
+- Body text: `text-sm` or `text-base`
+- Muted text: `text-muted-foreground`
+
+### Interactive Elements
+- All buttons need hover states
+- Use `transition-all` for smooth animations
+- Add `cursor-pointer` for clickable non-button elements
+- Use focus rings for accessibility
+
+## File Structure
+```
+src/
+├── components/
+│   ├── ui/           # shadcn/ui components
+│   ├── layout/       # Layout components
+│   └── theme-*.tsx   # Theme-related components
+├── features/         # Feature-specific components
+├── hooks/            # Custom hooks
+├── lib/              # Utilities
+└── types/            # TypeScript types
+```

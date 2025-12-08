@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: frontend-dev
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./src:/app/src:delegated
+      - ./public:/app/public:delegated
+      - ./index.html:/app/index.html:ro
+      - ./vite.config.ts:/app/vite.config.ts:ro
+      - ./tailwind.config.js:/app/tailwind.config.js:ro
+      - ./postcss.config.js:/app/postcss.config.js:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+    environment:
+      - NODE_ENV=development
+      - VITE_ASGARDEO_CLIENT_ID=${VITE_ASGARDEO_CLIENT_ID:-OfCxVt2EjHcXMsIgfeXgH9ZCbzIa}
+      - VITE_ASGARDEO_BASE_URL=${VITE_ASGARDEO_BASE_URL:-https://api.asgardeo.io/t/assignmnent}
+      - VITE_REDIRECT_URL=${VITE_REDIRECT_URL:-http://localhost:5173}
+      - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-http://localhost:3002/api/v1}
+      - VITE_TASK_SERVICE_URL=${VITE_TASK_SERVICE_URL:-http://localhost:3000/api/v1}
+      - VITE_PROJECT_SERVICE_URL=${VITE_PROJECT_SERVICE_URL:-http://localhost:3001/api/v1}
+    restart: unless-stopped
+
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_ASGARDEO_CLIENT_ID=${VITE_ASGARDEO_CLIENT_ID:-OfCxVt2EjHcXMsIgfeXgH9ZCbzIa}
+        - VITE_ASGARDEO_BASE_URL=${VITE_ASGARDEO_BASE_URL:-https://api.asgardeo.io/t/assignmnent}
+        - VITE_REDIRECT_URL=${VITE_REDIRECT_URL:-http://localhost}
+        - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-http://localhost:3002/api/v1}
+        - VITE_TASK_SERVICE_URL=${VITE_TASK_SERVICE_URL:-http://localhost:3000/api/v1}
+        - VITE_PROJECT_SERVICE_URL=${VITE_PROJECT_SERVICE_URL:-http://localhost:3001/api/v1}
+    container_name: frontend-prod
+    ports:
+      - '80:80'
+    restart: unless-stopped
+    profiles:
+      - production
+
