@@ -16,7 +16,6 @@ sed -i "s|__VITE_TASK_SERVICE_URL__|${VITE_TASK_SERVICE_URL:-}|g" "$CONFIG_FILE"
 sed -i "s|__VITE_PROJECT_SERVICE_URL__|${VITE_PROJECT_SERVICE_URL:-}|g" "$CONFIG_FILE"
 
 echo "✅ Runtime configuration injected"
-cat "$CONFIG_FILE"
 
 # Start nginx
 exec nginx -g "daemon off;"

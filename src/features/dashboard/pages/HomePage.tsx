@@ -1,11 +1,9 @@
-import { useMemo } from "react"
 import { useTasks, useProjects } from "@/hooks/useApi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-// Tooltip import removed - not used in this component
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+// Tooltip, Avatar imports removed - not used in this component
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   FolderKanban,
@@ -15,7 +13,6 @@ import {
   Activity,
   TrendingUp,
   TrendingDown,
-  Calendar,
   Sparkles,
   Bug,
   FileText,
@@ -44,25 +41,6 @@ const priorityConfig = {
 export function HomePage() {
   const { data: tasks, isLoading: tasksLoading } = useTasks()
   const { data: projects, isLoading: projectsLoading } = useProjects()
-
-  // Calculate project progress based on tasks
-  const projectProgress = useMemo(() => {
-    const progressMap = new Map<string, number>()
-    if (!tasks || !projects) return progressMap
-
-    projects.forEach((project) => {
-      const projectTasks = tasks.filter((task) => task.projectId === project.id)
-      if (projectTasks.length === 0) {
-        progressMap.set(project.id, 0)
-      } else {
-        const completedTasks = projectTasks.filter((task) => task.status === "completed").length
-        const progress = Math.round((completedTasks / projectTasks.length) * 100)
-        progressMap.set(project.id, progress)
-      }
-    })
-
-    return progressMap
-  }, [tasks, projects])
 
   const taskStats = {
     total: tasks?.length || 0,
@@ -351,76 +329,59 @@ export function HomePage() {
                   ))}
                 </div>
               ) : recentProjects.length > 0 ? (
-                <div className="p-4 space-y-3">
-                  {recentProjects.map((project) => {
-                    const progress = projectProgress.get(project.id) || 0
-                    const statusColor = {
-                      active: "from-green-500 to-emerald-500",
-                      on_hold: "from-yellow-500 to-amber-500",
-                      completed: "from-blue-500 to-cyan-500",
-                      archived: "from-slate-500 to-gray-500",
+                <div className="divide-y">
+                  {recentProjects.map((project, index) => {
+                    // Rotating colors for project icons
+                    const iconColors = [
+                      "bg-blue-500",
+                      "bg-orange-400", 
+                      "bg-red-400",
+                      "bg-pink-400",
+                      "bg-purple-500",
+                      "bg-teal-500",
+                    ]
+                    const iconColor = iconColors[index % iconColors.length]
+                    
+                    // Status badge config
+                    const statusBadge = {
+                      active: { label: "Active", className: "bg-green-100 text-green-700 border-green-200" },
+                      on_hold: { label: "On Hold", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+                      completed: { label: "Completed", className: "bg-blue-100 text-blue-700 border-blue-200" },
+                      archived: { label: "Archived", className: "bg-gray-100 text-gray-700 border-gray-200" },
                     }
+                    const badge = statusBadge[project.status as keyof typeof statusBadge] || statusBadge.active
                     
                     return (
                       <div
                         key={project.id}
-                        className="group relative p-4 rounded-xl border bg-card hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                        className="flex items-center gap-4 px-6 py-4 hover:bg-muted/50 transition-colors"
                       >
-                        {/* Top accent line */}
+                        {/* Colored icon */}
                         <div className={cn(
-                          "absolute top-0 left-4 right-4 h-0.5 rounded-full bg-gradient-to-r",
-                          statusColor[project.status as keyof typeof statusColor] || statusColor.active
-                        )} />
+                          "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
+                          iconColor
+                        )}>
+                          <FolderKanban className="h-5 w-5 text-white" />
+                        </div>
                         
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className="min-w-0">
-                            <h4 className="font-semibold truncate group-hover:text-primary transition-colors">
+                        {/* Project info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-foreground truncate">
                               {project.name}
                             </h4>
-                            {project.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                {project.description}
-                              </p>
-                            )}
+                            <Badge 
+                              variant="outline" 
+                              className={cn("text-xs font-medium shrink-0", badge.className)}
+                            >
+                              {badge.label}
+                            </Badge>
                           </div>
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "shrink-0 capitalize text-xs",
-                              project.status === "active" && "border-green-500/50 text-green-600 bg-green-500/10",
-                              project.status === "on_hold" && "border-yellow-500/50 text-yellow-600 bg-yellow-500/10",
-                              project.status === "completed" && "border-blue-500/50 text-blue-600 bg-blue-500/10",
-                            )}
-                          >
-                            {project.status.replace("_", " ")}
-                          </Badge>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Progress</span>
-                            <span className="font-medium">{progress}%</span>
-                          </div>
-                          <Progress value={progress} className="h-1.5" />
-                        </div>
-
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(project.createdAt).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })}
-                          </div>
-                          <div className="flex -space-x-1.5">
-                            {["A", "B", "C"].map((initial, i) => (
-                              <Avatar key={i} className="h-6 w-6 border-2 border-background">
-                                <AvatarFallback className="text-[10px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                                  {initial}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                          </div>
+                          {project.description && (
+                            <p className="text-sm text-muted-foreground truncate mt-0.5">
+                              {project.description}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )
