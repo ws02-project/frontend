@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+// Tooltip import removed - not used in this component
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -15,10 +15,6 @@ import {
   Activity,
   TrendingUp,
   TrendingDown,
-  Circle,
-  Timer,
-  CheckCircle2,
-  MoreHorizontal,
   Calendar,
   Sparkles,
   Bug,
@@ -264,8 +260,8 @@ export function HomePage() {
                 </div>
               ) : recentTasks.length > 0 ? (
                 <div className="divide-y">
-                  {recentTasks.map((task, index) => {
-                    const type = (task as any).type || "feature"
+                  {recentTasks.map((task) => {
+                    const type = (task as { type?: string }).type || "feature"
                     const typeIcons = {
                       feature: Sparkles,
                       bug: Bug,
@@ -273,7 +269,7 @@ export function HomePage() {
                       improvement: Lightbulb,
                     }
                     const TypeIcon = typeIcons[type as keyof typeof typeIcons] || Sparkles
-                    const priority = priorityConfig[task.priority] || priorityConfig.medium
+                    const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium
                     
                     return (
                       <div

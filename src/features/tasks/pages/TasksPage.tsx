@@ -14,7 +14,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { useTasks, useProjects, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/useApi"
-import { createTaskSchema, updateTaskSchema, type CreateTaskFormData, type UpdateTaskFormData } from "@/lib/validations"
+import { createTaskSchema, type CreateTaskFormData } from "@/lib/validations"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -85,7 +85,7 @@ import {
   Copy,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { Project, Task, TaskStatus, TaskPriority, TaskType, CreateTaskInput } from "@/types"
+import type { Project, Task, TaskStatus, TaskPriority, TaskType } from "@/types"
 
 // Status config with icons and colors (lowercase to match backend)
 const statusConfig: Record<TaskStatus, { label: string; icon: React.ElementType; color: string }> = {
@@ -197,7 +197,7 @@ export function TasksPage() {
             </div>
           )
         },
-        filterFn: (row, id, value) => value.includes(row.getValue(id)),
+        filterFn: (row, id, value: string[]) => value.includes(row.getValue(id) as string),
       },
       {
         accessorKey: "priority",
@@ -218,7 +218,7 @@ export function TasksPage() {
             </div>
           )
         },
-        filterFn: (row, id, value) => value.includes(row.getValue(id)),
+        filterFn: (row, id, value: string[]) => value.includes(row.getValue(id) as string),
       },
       {
         id: "actions",
@@ -274,7 +274,17 @@ export function TasksPage() {
 
   const handleCreate = async (data: CreateTaskFormData) => {
     try {
-      await createTask.mutateAsync(data)
+      // Convert empty/null values to undefined for API compatibility
+      const taskData = {
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        type: data.type,
+        projectId: data.projectId || undefined,
+        assignedTo: data.assignedTo || undefined,
+      }
+      await createTask.mutateAsync(taskData)
       toast.success("Task created successfully")
       setIsCreateOpen(false)
     } catch {
@@ -282,10 +292,20 @@ export function TasksPage() {
     }
   }
 
-  const handleUpdate = async (data: UpdateTaskFormData) => {
+  const handleUpdate = async (data: CreateTaskFormData) => {
     if (!editingTask) return
     try {
-      await updateTask.mutateAsync({ id: editingTask.id, ...data })
+      // Convert empty/null values to undefined for API compatibility
+      const taskData = {
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        type: data.type,
+        projectId: data.projectId || undefined,
+        assignedTo: data.assignedTo || undefined,
+      }
+      await updateTask.mutateAsync({ id: editingTask.id, ...taskData })
       toast.success("Task updated successfully")
       setEditingTask(null)
     } catch {
@@ -344,9 +364,9 @@ export function TasksPage() {
               <Button variant="outline" size="sm" className="h-9 border-dashed">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Status
-                {table.getColumn("status")?.getFilterValue() && (
-                  <Badge variant="secondary" className="ml-2">{(table.getColumn("status")?.getFilterValue() as string[])?.length}</Badge>
-                )}
+                {(table.getColumn("status")?.getFilterValue() as string[] | undefined)?.length ? (
+                  <Badge variant="secondary" className="ml-2">{(table.getColumn("status")?.getFilterValue() as string[]).length}</Badge>
+                ) : null}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-2" align="start">
@@ -381,9 +401,9 @@ export function TasksPage() {
               <Button variant="outline" size="sm" className="h-9 border-dashed">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Priority
-                {table.getColumn("priority")?.getFilterValue() && (
-                  <Badge variant="secondary" className="ml-2">{(table.getColumn("priority")?.getFilterValue() as string[])?.length}</Badge>
-                )}
+                {(table.getColumn("priority")?.getFilterValue() as string[] | undefined)?.length ? (
+                  <Badge variant="secondary" className="ml-2">{(table.getColumn("priority")?.getFilterValue() as string[]).length}</Badge>
+                ) : null}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-2" align="start">
@@ -412,11 +432,11 @@ export function TasksPage() {
             </PopoverContent>
           </Popover>
 
-          {(table.getColumn("status")?.getFilterValue() || table.getColumn("priority")?.getFilterValue()) && (
+          {((table.getColumn("status")?.getFilterValue() as string[] | undefined)?.length || (table.getColumn("priority")?.getFilterValue() as string[] | undefined)?.length) ? (
             <Button variant="ghost" size="sm" onClick={() => { table.getColumn("status")?.setFilterValue(undefined); table.getColumn("priority")?.setFilterValue(undefined); }}>
               Reset <X className="ml-2 h-4 w-4" />
             </Button>
-          )}
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2">
@@ -554,19 +574,18 @@ function TaskForm({
 }: {
   projects?: Project[]
   defaultValues?: Partial<CreateTaskFormData>
-  onSubmit: (data: CreateTaskFormData | UpdateTaskFormData) => void
+  onSubmit: (data: CreateTaskFormData) => void
   onCancel: () => void
   isLoading: boolean
   submitLabel: string
 }) {
-  const schema = defaultValues ? updateTaskSchema : createTaskSchema
   const {
     register,
     handleSubmit,
     control,
     formState: { errors, isSubmitting },
   } = useForm<CreateTaskFormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createTaskSchema),
     defaultValues: defaultValues || {
       title: "",
       description: "",
@@ -611,7 +630,7 @@ function TaskForm({
             name="projectId"
             control={control}
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
                 <SelectTrigger id="project" className={errors.projectId ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select a project (optional)" />
                 </SelectTrigger>

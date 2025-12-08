@@ -5,6 +5,7 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "composite": true,
+    "emitDeclarationOnly": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",

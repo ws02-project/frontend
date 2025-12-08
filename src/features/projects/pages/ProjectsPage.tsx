@@ -2,7 +2,7 @@ import { useState, useMemo } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject, useTasks } from "@/hooks/useApi"
-import { createProjectSchema, updateProjectSchema, type CreateProjectFormData, type UpdateProjectFormData } from "@/lib/validations"
+import { createProjectSchema, type CreateProjectFormData } from "@/lib/validations"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -59,7 +59,7 @@ import {
   Tag,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { Project, ProjectStatus, CreateProjectInput } from "@/types"
+import type { Project, ProjectStatus } from "@/types"
 import { cn } from "@/lib/utils"
 
 // Status config (lowercase to match backend)
@@ -129,7 +129,7 @@ export function ProjectsPage() {
     }
   }
 
-  const handleUpdate = async (data: UpdateProjectFormData) => {
+  const handleUpdate = async (data: CreateProjectFormData) => {
     if (!editingProject) return
     try {
       await updateProject.mutateAsync({ id: editingProject.id, ...data })
@@ -308,7 +308,7 @@ export function ProjectsPage() {
       ) : viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map((project) => {
-            const config = statusConfig[project.status] || statusConfig.active
+            const config = statusConfig[project.status as ProjectStatus] || statusConfig.active
             const progress = projectProgress.get(project.id) || 0
             return (
               <Card key={project.id} className="group hover:shadow-lg hover:border-primary/30 transition-all duration-200">
@@ -372,7 +372,7 @@ export function ProjectsPage() {
                   {/* Tags */}
                   {project.tags && project.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {project.tags.slice(0, 3).map((tag) => (
+                      {project.tags.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
@@ -397,7 +397,7 @@ export function ProjectsPage() {
                       })}
                     </div>
                     <div className="flex -space-x-2">
-                      {(project.members || []).slice(0, 3).map((member, i) => (
+                      {(project.members || []).slice(0, 3).map((member: string, i: number) => (
                         <Tooltip key={i}>
                           <TooltipTrigger>
                             <Avatar className="h-7 w-7 border-2 border-background">
@@ -435,7 +435,7 @@ export function ProjectsPage() {
           <ScrollArea className="h-[600px]">
             <div className="divide-y">
               {filteredProjects.map((project) => {
-                const config = statusConfig[project.status] || statusConfig.active
+                const config = statusConfig[project.status as ProjectStatus] || statusConfig.active
                 const progress = projectProgress.get(project.id) || 0
                 return (
                   <div key={project.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group">
@@ -525,12 +525,11 @@ function ProjectForm({
   submitLabel,
 }: {
   defaultValues?: Partial<CreateProjectFormData>
-  onSubmit: (data: CreateProjectFormData | UpdateProjectFormData) => void
+  onSubmit: (data: CreateProjectFormData) => void
   onCancel: () => void
   isLoading: boolean
   submitLabel: string
 }) {
-  const schema = defaultValues ? updateProjectSchema : createProjectSchema
   const {
     register,
     handleSubmit,
@@ -539,7 +538,7 @@ function ProjectForm({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateProjectFormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createProjectSchema),
     defaultValues: defaultValues || {
       name: "",
       description: "",
@@ -558,8 +557,8 @@ function ProjectForm({
     }
   }
 
-  const removeTag = (tag: string) => {
-    setValue("tags", tags.filter((t) => t !== tag), { shouldValidate: true })
+  const removeTag = (tagToRemove: string) => {
+    setValue("tags", tags.filter((t: string) => t !== tagToRemove), { shouldValidate: true })
   }
 
   return (
