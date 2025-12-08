@@ -8,6 +8,8 @@ export const authConfig = {
   baseUrl: config.asgardeoBaseUrl,
   scope: ["openid", "email", "profile", "groups", "roles"],
   resourceServerURLs: [config.apiBaseUrl],
+  // Use localStorage for session persistence across browser tabs
+  storage: "localStorage" as const,
 };
 
 // API Configuration

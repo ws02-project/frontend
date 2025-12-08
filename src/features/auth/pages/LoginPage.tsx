@@ -1,13 +1,36 @@
 import { useAuthContext } from "@asgardeo/auth-react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, LogIn, Zap, Shield, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function LoginPage() {
-  const { state, signIn } = useAuthContext();
+  const { state, signIn, trySignInSilently } = useAuthContext();
+  const location = useLocation();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  if (state.isLoading) {
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!state.isAuthenticated && !state.isLoading) {
+        try {
+          // Try to restore session silently
+          await trySignInSilently();
+        } catch {
+          // No existing session
+        }
+      }
+      setIsCheckingAuth(false);
+    };
+
+    // Small delay to let SDK initialize
+    const timer = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timer);
+  }, [state.isAuthenticated, state.isLoading, trySignInSilently]);
+
+  // Show loading while checking auth
+  if (state.isLoading || isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="flex flex-col items-center gap-4">
@@ -18,8 +41,10 @@ export function LoginPage() {
     );
   }
 
+  // Redirect to intended destination or home if authenticated
   if (state.isAuthenticated) {
-    return <Navigate to="/" replace />;
+    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+    return <Navigate to={from} replace />;
   }
 
   const handleLogin = () => {
