@@ -357,7 +357,7 @@ export function TasksPage() {
             onChange={(e) => table.getColumn("title")?.setFilterValue(e.target.value)}
             className="h-9 w-[200px]"
           />
-          
+
           {/* Status Filter */}
           <Popover>
             <PopoverTrigger asChild>
@@ -462,13 +462,13 @@ export function TasksPage() {
                 <DialogTitle>Create New Task</DialogTitle>
                 <DialogDescription>Add a new task to your list.</DialogDescription>
               </DialogHeader>
-          <TaskForm
-            projects={projects}
-            onSubmit={handleCreate}
-            onCancel={() => setIsCreateOpen(false)}
-            isLoading={createTask.isPending}
-            submitLabel="Create"
-          />
+              <TaskForm
+                projects={projects}
+                onSubmit={handleCreate}
+                onCancel={() => setIsCreateOpen(false)}
+                isLoading={createTask.isPending}
+                submitLabel="Create"
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -564,13 +564,13 @@ export function TasksPage() {
 }
 
 // Task Form Component
-function TaskForm({ 
+function TaskForm({
   projects,
-  defaultValues, 
-  onSubmit, 
-  onCancel, 
-  isLoading, 
-  submitLabel 
+  defaultValues,
+  onSubmit,
+  onCancel,
+  isLoading,
+  submitLabel
 }: {
   projects?: Project[]
   defaultValues?: Partial<CreateTaskFormData>
@@ -630,12 +630,15 @@ function TaskForm({
             name="projectId"
             control={control}
             render={({ field }) => (
-              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+              <Select
+                value={field.value || "none"}
+                onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+              >
                 <SelectTrigger id="project" className={errors.projectId ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select a project (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">
+                  <SelectItem value="none">
                     <span className="text-muted-foreground">No project</span>
                   </SelectItem>
                   {projects?.map((project) => (
