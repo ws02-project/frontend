@@ -1,0 +1,52 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group all dependencies into a single PR",
+      "matchPackagePatterns": ["*"],
+      "excludePackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "excludePackagePatterns": ["^node$"],
+      "groupName": "all dependencies",
+      "groupSlug": "all-deps",
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeSchedule": ["before 3am on monday"]
+    },
+    {
+      "description": "Do not automerge React - requires manual testing",
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "automerge": false,
+      "labels": ["dependencies", "react", "manual-review"]
+    },
+    {
+      "description": "Do not automerge Node.js - requires compatibility testing",
+      "matchDepTypes": ["engines"],
+      "matchPackageNames": ["node"],
+      "automerge": false,
+      "labels": ["dependencies", "nodejs", "manual-review"]
+    },
+    {
+      "description": "Do not automerge Node.js Docker image updates",
+      "matchDatasources": ["docker"],
+      "matchPackagePatterns": ["^node$", "node:"],
+      "automerge": false,
+      "labels": ["dependencies", "nodejs", "manual-review"]
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "automergeType": "pr",
+    "schedule": ["before 3am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": true,
+    "automergeType": "pr"
+  },
+  "prConcurrentLimit": 1,
+  "prHourlyLimit": 2
+}
+
