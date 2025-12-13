@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -124,6 +124,19 @@ export function TasksPage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      await deleteTask.mutateAsync(id)
+      toast.success("Task deleted successfully")
+    } catch {
+      toast.error("Failed to delete task")
+    }
+  }, [deleteTask])
+
+  const openEditDialog = useCallback((task: Task) => {
+    setEditingTask(task)
+  }, [])
 
   const columns: ColumnDef<Task>[] = useMemo(
     () => [
@@ -253,7 +266,7 @@ export function TasksPage() {
         },
       },
     ],
-    []
+    [handleDelete, openEditDialog]
   )
 
   const table = useReactTable({
@@ -313,18 +326,6 @@ export function TasksPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteTask.mutateAsync(id)
-      toast.success("Task deleted successfully")
-    } catch {
-      toast.error("Failed to delete task")
-    }
-  }
-
-  const openEditDialog = (task: Task) => {
-    setEditingTask(task)
-  }
 
   const statuses = Object.keys(statusConfig) as TaskStatus[]
   const priorities = Object.keys(priorityConfig) as TaskPriority[]

@@ -26,7 +26,7 @@ export interface CreateTaskInput {
   assignedTo?: string
 }
 
-export interface UpdateTaskInput extends Partial<CreateTaskInput> {}
+export type UpdateTaskInput = Partial<CreateTaskInput>
 
 // Project Types - aligned with backend
 export interface Project {
@@ -52,7 +52,7 @@ export interface CreateProjectInput {
   tags?: string[]
 }
 
-export interface UpdateProjectInput extends Partial<CreateProjectInput> {}
+export type UpdateProjectInput = Partial<CreateProjectInput>
 
 // User Types
 export interface User {
