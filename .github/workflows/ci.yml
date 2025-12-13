@@ -1,8 +1,5 @@
 name: Frontend CI/CD
 
-# This workflow is for frontend when in its own repository
-# Place this file in: frontend/.github/workflows/ci.yml
-
 on:
   push:
     branches: [main, master, develop]
@@ -23,10 +20,39 @@ permissions:
   contents: read # Required to checkout code
 
 jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    name: Lint and Build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run linting
+        run: pnpm lint
+
+      - name: Build application
+        run: pnpm build
+
   build-and-push:
     runs-on: ubuntu-latest
     name: Build and Push Docker Image
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    needs: lint-and-build
+    if: github.event_name == 'push'
 
     steps:
       - name: Checkout code
@@ -66,27 +92,11 @@ jobs:
           echo "image=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_NAME }}-$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "image_latest=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_NAME }}-latest" >> $GITHUB_OUTPUT
 
-      - name: Install dependencies for Trivy scan
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-          pnpm install --frozen-lockfile || pnpm install
-
-      - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          exit-code: '0' # Don't fail on filesystem scan, just report
-
       - name: Build Docker image
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.image }}
         run: |
           echo "Building Docker image: $IMAGE_NAME"
-          # No build args needed - config is injected at runtime via Helm values
           docker build -t $IMAGE_NAME -f Dockerfile .
           docker tag $IMAGE_NAME ${{ steps.meta.outputs.image_latest }}
           # Also tag with a simple local name for Trivy scanning
@@ -129,12 +139,20 @@ jobs:
       - name: Get commit message
         id: commit
         run: |
-          # Get the commit message (first line only for cleaner output)
-          COMMIT_MSG=$(git log -1 --pretty=%s)
+          # Check if this is a merge commit
+          PARENT_COUNT=$(git cat-file -p HEAD | grep -c "^parent")
+          if [ "$PARENT_COUNT" -gt 1 ]; then
+            # For merge commits, get the title from the merged branch's last commit
+            COMMIT_MSG=$(git log -1 --pretty=%s HEAD^2 2>/dev/null || git log -1 --pretty=%s)
+          else
+            COMMIT_MSG=$(git log -1 --pretty=%s)
+          fi
+          # Truncate long messages
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -c 100)
           echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
 
       - name: Trigger deployment update
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.PAT_TOKEN }}
           repository: ws02-project/deployments
