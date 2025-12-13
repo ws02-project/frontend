@@ -1,0 +1,83 @@
+# Frontend - Development Guidelines
+
+## Before Making Code Changes
+
+1. **Pull latest changes first**
+   ```bash
+   git pull
+   pnpm install
+   ```
+   - Always sync with remote before starting work
+   - Install any new dependencies
+
+2. **Understand the existing code** - Read and understand the relevant files before proposing changes
+3. **Check existing patterns** - Review similar components and utilities to understand coding patterns
+
+## When Making Code Changes
+
+1. **Follow existing patterns**
+   - Use the established coding style and conventions
+   - Follow the existing folder structure (components, features, hooks, services, stores, utils)
+   - Use the same libraries/utilities already in use (React Query, React Router, Zustand, Radix UI, etc.)
+
+2. **Keep changes focused**
+   - Make minimal, targeted changes
+   - Avoid unnecessary refactoring unless explicitly requested
+
+3. **Update documentation if needed**
+   - If adding new API endpoints or services, update relevant documentation
+   - If adding new environment variables, update README or configuration docs
+   - If changing build or deployment configuration, update relevant sections
+
+## Before Committing Changes
+
+Always run these checks in order:
+
+1. **Run linting**
+   ```bash
+   pnpm lint
+   ```
+   - Fix any linting errors before committing
+   - Warnings are acceptable but errors must be resolved
+
+2. **Run build**
+   ```bash
+   pnpm build
+   ```
+   - Ensure TypeScript compilation succeeds
+   - Fix any type errors
+   - Verify the build output is correct
+
+3. **Only commit if all checks pass**
+
+## Development Patterns
+
+- **Components**: Use functional components with TypeScript
+- **State Management**: Use Zustand for global state, React Query for server state
+- **Styling**: Use Tailwind CSS with shadcn/ui components
+- **Forms**: Use React Hook Form with Zod validation
+- **API Calls**: Use React Query hooks in services
+- **Routing**: Use React Router v7
+
+## Common Files to Check
+
+- `src/components/` - Reusable UI components
+- `src/features/` - Feature-based modules
+- `src/hooks/` - Custom React hooks
+- `src/services/` - API service layer
+- `src/stores/` - Zustand stores
+- `src/lib/` - Utility functions and configurations
+- `vite.config.ts` - Vite build configuration
+- `tailwind.config.js` - Tailwind CSS configuration
+- `tsconfig.json` - TypeScript configuration
+- `.eslintrc.cjs` - ESLint configuration
+- `README.md` - Project documentation
+
+## Important Notes
+
+- This is a React + TypeScript + Vite project
+- Uses pnpm as package manager
+- Environment variables are injected at runtime via `config.js`
+- Build output is served via Nginx in production
+- Follow React best practices and hooks rules
+
