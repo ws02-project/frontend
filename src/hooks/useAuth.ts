@@ -59,23 +59,42 @@ interface DecodedToken {
   [key: string]: unknown
 }
 
+// Global cache to prevent multiple fetches across component instances
+let globalBackendUser: BackendUser | null = null
+let globalFetchPromise: Promise<BackendUser | null> | null = null
+
 export function useAuth(): UseAuthReturn {
   const { state, signIn, signOut, getAccessToken, getIDToken, getDecodedIDToken } = useAuthContext()
   const [decodedToken, setDecodedToken] = useState<DecodedToken | null>(null)
-  const [backendUser, setBackendUser] = useState<BackendUser | null>(null)
-  const [hasFetched, setHasFetched] = useState(false)
+  const [backendUser, setBackendUser] = useState<BackendUser | null>(globalBackendUser)
 
   useEffect(() => {
     if (!state.isAuthenticated) {
       setDecodedToken(null)
       setBackendUser(null)
-      setHasFetched(false)
+      globalBackendUser = null
+      globalFetchPromise = null
       return
     }
 
-    if (hasFetched) return
+    // If we already have the user cached, use it
+    if (globalBackendUser) {
+      setBackendUser(globalBackendUser)
+      getDecodedIDToken().then(token => setDecodedToken(token as DecodedToken)).catch(() => {})
+      return
+    }
 
-    const fetchData = async () => {
+    // If a fetch is already in progress, wait for it
+    if (globalFetchPromise) {
+      globalFetchPromise.then(user => {
+        setBackendUser(user)
+        getDecodedIDToken().then(token => setDecodedToken(token as DecodedToken)).catch(() => {})
+      })
+      return
+    }
+
+    // Start a new fetch
+    globalFetchPromise = (async () => {
       try {
         const token = await getDecodedIDToken()
         setDecodedToken(token as DecodedToken)
@@ -90,15 +109,16 @@ export function useAuth(): UseAuthReturn {
         
         setAuthToken(userApi, accessToken)
         const response = await userApi.get<{ data: BackendUser }>("/users/me")
-        setBackendUser(response.data.data)
-        setHasFetched(true)
+        globalBackendUser = response.data.data
+        setBackendUser(globalBackendUser)
+        return globalBackendUser
       } catch {
         setDecodedToken(null)
         setBackendUser(null)
+        return null
       }
-    }
-    fetchData()
-  }, [state.isAuthenticated, hasFetched, getDecodedIDToken, getIDToken, getAccessToken])
+    })()
+  }, [state.isAuthenticated, getDecodedIDToken, getIDToken, getAccessToken])
 
   const authData = useMemo(() => {
     if (!state.isAuthenticated) {
