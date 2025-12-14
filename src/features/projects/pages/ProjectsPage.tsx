@@ -2,6 +2,7 @@ import { useState, useMemo } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject, useTasks } from "@/hooks/useApi"
+import { useAuth } from "@/hooks/useAuth"
 import { createProjectSchema, type CreateProjectFormData } from "@/lib/validations"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -86,6 +87,7 @@ export function ProjectsPage() {
   const createProject = useCreateProject()
   const updateProject = useUpdateProject()
   const deleteProject = useDeleteProject()
+  const { canCreateProject, canEditProject, canDeleteProject } = useAuth()
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [searchQuery, setSearchQuery] = useState("")
@@ -141,11 +143,20 @@ export function ProjectsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    if (!canDeleteProject) {
+      toast.error("You don't have permission to delete projects")
+      return
+    }
     try {
       await deleteProject.mutateAsync(id)
       toast.success("Project deleted successfully")
-    } catch {
-      toast.error("Failed to delete project")
+    } catch (err: unknown) {
+      const error = err as { response?: { status?: number } }
+      if (error.response?.status === 403) {
+        toast.error("You don't have permission to delete projects")
+      } else {
+        toast.error("Failed to delete project")
+      }
     }
   }
 
@@ -179,12 +190,14 @@ export function ProjectsPage() {
         </div>
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Project
-            </Button>
-          </DialogTrigger>
+          {canCreateProject && (
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Project
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Create New Project</DialogTitle>
@@ -297,7 +310,7 @@ export function ProjectsPage() {
                 ? "Try adjusting your filters"
                 : "Get started by creating your first project"}
             </p>
-            {!searchQuery && statusFilter === "all" && (
+            {!searchQuery && statusFilter === "all" && canCreateProject && (
               <Button onClick={() => setIsCreateOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Project
@@ -336,19 +349,25 @@ export function ProjectsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openEditDialog(project)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
+                        {canEditProject && (
+                          <DropdownMenuItem onClick={() => openEditDialog(project)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem>
                           <ExternalLink className="mr-2 h-4 w-4" />
                           Open
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDelete(project.id)} className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
+                        {canDeleteProject && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDelete(project.id)} className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -471,14 +490,18 @@ export function ProjectsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(project)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(project.id)} className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
+                        {canEditProject && (
+                          <DropdownMenuItem onClick={() => openEditDialog(project)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        )}
+                        {canDeleteProject && (
+                          <DropdownMenuItem onClick={() => handleDelete(project.id)} className="text-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

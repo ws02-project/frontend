@@ -26,7 +26,14 @@ const createApiInstance = (baseURL: string): AxiosInstance => {
     (error) => {
       if (error.response?.status === 401) {
         // Handle unauthorized - could trigger logout
-        console.error("Unauthorized request")
+        console.error("Unauthorized request - token may be expired")
+      } else if (error.response?.status === 403) {
+        // Handle forbidden - insufficient permissions
+        console.error("Forbidden - insufficient permissions")
+        // The error will be caught by the mutation and shown via toast
+      } else if (error.response?.status === 503) {
+        // Handle service unavailable - auth service down
+        console.error("Service unavailable - authentication service may be down")
       }
       return Promise.reject(error)
     }
@@ -52,5 +59,8 @@ export const apiRequest = async <T>(
   const response = await api.request<T>(config)
   return response.data
 }
+
+
+
 
 

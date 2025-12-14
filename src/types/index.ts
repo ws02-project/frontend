@@ -65,7 +65,7 @@ export interface User {
   updatedAt: string
 }
 
-export type UserRole = "USER" | "ADMIN"
+export type UserRole = "user" | "admin"
 
 // API Response Types
 export interface ApiResponse<T> {

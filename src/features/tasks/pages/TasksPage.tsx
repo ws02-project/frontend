@@ -14,6 +14,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { useTasks, useProjects, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/useApi"
+import { useAuth } from "@/hooks/useAuth"
 import { createTaskSchema, type CreateTaskFormData } from "@/lib/validations"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -116,6 +117,7 @@ export function TasksPage() {
   const createTask = useCreateTask()
   const updateTask = useUpdateTask()
   const deleteTask = useDeleteTask()
+  const { canDeleteTask } = useAuth()
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -126,13 +128,22 @@ export function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   const handleDelete = useCallback(async (id: string) => {
+    if (!canDeleteTask) {
+      toast.error("You don't have permission to delete tasks")
+      return
+    }
     try {
       await deleteTask.mutateAsync(id)
       toast.success("Task deleted successfully")
-    } catch {
-      toast.error("Failed to delete task")
+    } catch (err: unknown) {
+      const error = err as { response?: { status?: number } }
+      if (error.response?.status === 403) {
+        toast.error("You don't have permission to delete tasks")
+      } else {
+        toast.error("Failed to delete task")
+      }
     }
-  }, [deleteTask])
+  }, [deleteTask, canDeleteTask])
 
   const openEditDialog = useCallback((task: Task) => {
     setEditingTask(task)
@@ -256,17 +267,19 @@ export function TasksPage() {
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDelete(task.id)} className="text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
+                {canDeleteTask && (
+                  <DropdownMenuItem onClick={() => handleDelete(task.id)} className="text-red-600">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )
         },
       },
     ],
-    [handleDelete, openEditDialog]
+    [handleDelete, openEditDialog, canDeleteTask]
   )
 
   const table = useReactTable({
