@@ -1,7 +1,8 @@
 import { useAuthContext } from "@asgardeo/auth-react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogIn, Sparkles, Shield, Layers, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, LogIn, Sparkles, Layers, ArrowRight, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function LoginPage() {
@@ -31,11 +32,8 @@ export function LoginPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 blur-xl opacity-50 animate-pulse" />
-            <Loader2 className="relative h-10 w-10 animate-spin text-violet-600" />
-          </div>
-          <p className="text-muted-foreground animate-pulse">Loading...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -53,20 +51,11 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-background">
-      {/* Animated background elements */}
+      {/* Subtle background gradient */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-violet-500/20 via-transparent to-transparent rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-indigo-500/20 via-transparent to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-fuchsia-500/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-3xl" />
       </div>
-
-      {/* Grid pattern overlay */}
-      <div 
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
 
       {/* Left Side - Branding (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 xl:px-20 relative z-10">
@@ -74,11 +63,8 @@ export function LoginPage() {
           {/* Logo & Brand */}
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <div className="relative group">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-                <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-xl">
-                  <Sparkles className="h-7 w-7 text-white" />
-                </div>
+              <div className="h-14 w-14 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Sparkles className="h-7 w-7 text-blue-500" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold tracking-tight text-foreground">TaskFlow</h1>
@@ -98,7 +84,7 @@ export function LoginPage() {
               description="Organize tasks, track progress, and hit deadlines with ease"
             />
             <FeatureItem
-              icon={<Shield className="h-5 w-5" />}
+              icon={<Lock className="h-5 w-5" />}
               title="Enterprise-Grade Security"
               description="SOC 2 compliant with Asgardeo identity management"
             />
@@ -116,7 +102,7 @@ export function LoginPage() {
                 {[...Array(4)].map((_, i) => (
                   <div 
                     key={i} 
-                    className="h-10 w-10 rounded-full border-2 border-background bg-gradient-to-br from-violet-400 to-indigo-500"
+                    className="h-10 w-10 rounded-full border-2 border-background bg-blue-500/20"
                     style={{ 
                       opacity: 1 - i * 0.15,
                       zIndex: 4 - i 
@@ -139,75 +125,49 @@ export function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-10">
             <div className="inline-flex items-center gap-3 mb-3">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg">
-                <Sparkles className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Sparkles className="h-6 w-6 text-blue-500" />
               </div>
               <span className="text-2xl font-bold text-foreground">TaskFlow</span>
             </div>
           </div>
 
           {/* Login Card */}
-          <div className="relative">
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 rounded-3xl blur-xl opacity-20" />
-            
-            <div className="relative bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-8 sm:p-10 shadow-2xl">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20 mb-5">
-                  <LogIn className="h-7 w-7 text-violet-600 dark:text-violet-400" />
-                </div>
-                <h2 className="text-2xl font-bold text-foreground mb-2">Welcome back</h2>
-                <p className="text-muted-foreground">Sign in to continue to your workspace</p>
+          <Card className="border-border/50 shadow-lg">
+            <CardHeader className="text-center space-y-1 pb-6">
+              <div className="mx-auto mb-4 h-16 w-16 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <LogIn className="h-7 w-7 text-blue-500" />
               </div>
-
-              {/* Login Button */}
+              <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+              <CardDescription className="text-base">
+                Sign in to continue to your workspace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <Button
                 onClick={handleLogin}
-                className="w-full h-14 text-base font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-300 group rounded-xl"
+                className="w-full h-12 text-base font-medium group"
                 size="lg"
               >
-                <span className="flex items-center gap-3">
+                <span className="flex items-center justify-center gap-2">
                   Sign in with Asgardeo
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </span>
               </Button>
 
-              {/* Divider */}
-              <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border/50" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-3 text-muted-foreground">Secure authentication</span>
-                </div>
-              </div>
-
-              {/* Security badges */}
-              <div className="flex items-center justify-center gap-6 mb-8">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Shield className="h-4 w-4 text-green-500" />
-                  <span className="text-xs">256-bit SSL</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Shield className="h-4 w-4 text-green-500" />
-                  <span className="text-xs">SOC 2</span>
-                </div>
-              </div>
-
               {/* Terms */}
-              <p className="text-center text-xs text-muted-foreground leading-relaxed">
+              <p className="text-center text-xs text-muted-foreground leading-relaxed pt-2">
                 By signing in, you agree to our{" "}
-                <a href="#" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+                <a href="#" className="text-primary hover:underline font-medium">
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a href="#" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+                <a href="#" className="text-primary hover:underline font-medium">
                   Privacy Policy
                 </a>
               </p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground mt-8">
@@ -221,9 +181,11 @@ export function LoginPage() {
 
 function FeatureItem({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="flex items-start gap-4 group">
-      <div className="flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20 flex items-center justify-center text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform">
-        {icon}
+    <div className="flex items-start gap-4">
+      <div className="flex-shrink-0 h-11 w-11 rounded-lg bg-blue-500/10 flex items-center justify-center">
+        <div className="text-blue-500">
+          {icon}
+        </div>
       </div>
       <div>
         <h3 className="font-semibold text-foreground mb-0.5">{title}</h3>
