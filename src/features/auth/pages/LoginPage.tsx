@@ -3,21 +3,29 @@ import { Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, LogIn, Sparkles, Layers, ArrowRight, Lock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export function LoginPage() {
   const { state, signIn, trySignInSilently } = useAuthContext();
   const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const silentLoginAttempted = useRef(false);
 
-  // Check for existing session on mount
+  // Check for existing session on mount - only once
   useEffect(() => {
     const checkAuth = async () => {
+      // Prevent multiple silent login attempts
+      if (silentLoginAttempted.current) {
+        setIsCheckingAuth(false);
+        return;
+      }
+      
       if (!state.isAuthenticated && !state.isLoading) {
+        silentLoginAttempted.current = true;
         try {
           await trySignInSilently();
         } catch {
-          // No existing session
+          // No existing session - this is expected for unauthenticated users
         }
       }
       setIsCheckingAuth(false);
@@ -25,7 +33,8 @@ export function LoginPage() {
 
     const timer = setTimeout(checkAuth, 100);
     return () => clearTimeout(timer);
-  }, [state.isAuthenticated, state.isLoading, trySignInSilently]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.isLoading]); // Only depend on isLoading, not trySignInSilently
 
   // Show loading while checking auth
   if (state.isLoading || isCheckingAuth) {
