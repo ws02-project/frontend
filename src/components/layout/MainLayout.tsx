@@ -18,7 +18,6 @@ import {
   CheckSquare,
   LogOut,
   Settings,
-  Bell,
   Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -79,12 +78,6 @@ export function MainLayout({ children }: MainLayoutProps) {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium text-white flex items-center justify-center">
-                3
-              </span>
-            </Button>
             <Separator orientation="vertical" className="h-8 mx-2" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
