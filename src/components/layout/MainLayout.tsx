@@ -16,7 +16,6 @@ import {
   LayoutDashboard,
   FolderKanban,
   CheckSquare,
-  Users,
   LogOut,
   Settings,
   Bell,
@@ -32,7 +31,6 @@ const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/projects", icon: FolderKanban, label: "Projects" },
   { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-  { href: "/team", icon: Users, label: "Team" },
 ]
 
 export function MainLayout({ children }: MainLayoutProps) {
