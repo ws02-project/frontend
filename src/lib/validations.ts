@@ -15,7 +15,7 @@ export const createTaskSchema = z.object({
   priority: taskPrioritySchema.optional(),
   type: taskTypeSchema.optional(),
   projectId: z.string().uuid("Invalid project ID").optional().or(z.literal("")).nullable(),
-  assignedTo: z.string().max(255, "Assigned to must be less than 255 characters").optional().or(z.literal("")).nullable(),
+  assignedTo: z.string().uuid("Invalid user ID").optional().or(z.literal("")).nullable(),
 })
 
 export const updateTaskSchema = createTaskSchema.partial().refine(

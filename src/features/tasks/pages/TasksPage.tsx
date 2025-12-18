@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { useTasks, useProjects, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/useApi"
+import { useTasks, useProjects, useCreateTask, useUpdateTask, useDeleteTask, useUsers } from "@/hooks/useApi"
 import { useAuth } from "@/hooks/useAuth"
 import { createTaskSchema, type CreateTaskFormData } from "@/lib/validations"
 import { Button } from "@/components/ui/button"
@@ -86,7 +86,7 @@ import {
   Copy,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { Project, Task, TaskStatus, TaskPriority, TaskType } from "@/types"
+import type { Project, Task, TaskStatus, TaskPriority, TaskType, User } from "@/types"
 
 // Status config with icons and colors (lowercase to match backend)
 const statusConfig: Record<TaskStatus, { label: string; icon: React.ElementType; color: string }> = {
@@ -118,6 +118,8 @@ export function TasksPage() {
   const updateTask = useUpdateTask()
   const deleteTask = useDeleteTask()
   const { canDeleteTask } = useAuth()
+  const { data: projects } = useProjects()
+  const { data: users } = useUsers()
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -203,6 +205,34 @@ export function TasksPage() {
         },
       },
       {
+        accessorKey: "assignedTo",
+        header: "Assigned To",
+        cell: ({ row }) => {
+          const assignedTo = row.original.assignedTo
+          if (!assignedTo) {
+            return <span className="text-muted-foreground text-sm">Unassigned</span>
+          }
+          const assignedUser = users?.find((u: User) => u.id === assignedTo)
+          if (!assignedUser) {
+            return <span className="text-muted-foreground text-sm">Unknown</span>
+          }
+          // Display name or username (part before @)
+          const displayText = assignedUser.displayName || assignedUser.email.split('@')[0]
+          return (
+            <div className="flex items-center gap-2">
+              {assignedUser.avatarUrl && (
+                <img
+                  src={assignedUser.avatarUrl}
+                  alt={displayText}
+                  className="h-6 w-6 rounded-full"
+                />
+              )}
+              <span className="text-sm">{displayText}</span>
+            </div>
+          )
+        },
+      },
+      {
         accessorKey: "status",
         header: ({ column }) => (
           <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="-ml-4">
@@ -279,7 +309,7 @@ export function TasksPage() {
         },
       },
     ],
-    [handleDelete, openEditDialog, canDeleteTask]
+    [handleDelete, openEditDialog, canDeleteTask, users]
   )
 
   const table = useReactTable({
@@ -296,7 +326,7 @@ export function TasksPage() {
     state: { sorting, columnFilters, columnVisibility, rowSelection },
   })
 
-  const { data: projects } = useProjects()
+
 
   const handleCreate = async (data: CreateTaskFormData) => {
     try {
@@ -478,6 +508,7 @@ export function TasksPage() {
               </DialogHeader>
               <TaskForm
                 projects={projects}
+                users={users}
                 onSubmit={handleCreate}
                 onCancel={() => setIsCreateOpen(false)}
                 isLoading={createTask.isPending}
@@ -557,6 +588,7 @@ export function TasksPage() {
           {editingTask && (
             <TaskForm
               projects={projects}
+              users={users}
               defaultValues={{
                 title: editingTask.title,
                 description: editingTask.description || "",
@@ -564,6 +596,7 @@ export function TasksPage() {
                 priority: editingTask.priority,
                 type: editingTask.type || "feature",
                 projectId: editingTask.projectId || "",
+                assignedTo: editingTask.assignedTo || "",
               }}
               onSubmit={handleUpdate}
               onCancel={() => setEditingTask(null)}
@@ -580,6 +613,7 @@ export function TasksPage() {
 // Task Form Component
 function TaskForm({
   projects,
+  users,
   defaultValues,
   onSubmit,
   onCancel,
@@ -587,6 +621,7 @@ function TaskForm({
   submitLabel
 }: {
   projects?: Project[]
+  users?: User[]
   defaultValues?: Partial<CreateTaskFormData>
   onSubmit: (data: CreateTaskFormData) => void
   onCancel: () => void
@@ -666,6 +701,41 @@ function TaskForm({
           />
           {errors.projectId && (
             <p className="text-sm text-destructive">{errors.projectId.message}</p>
+          )}
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="assignedTo">Assign To</Label>
+          <Controller
+            name="assignedTo"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value || "none"}
+                onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+              >
+                <SelectTrigger id="assignedTo" className={errors.assignedTo ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select a user (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <span className="text-muted-foreground">Unassigned</span>
+                  </SelectItem>
+                  {users?.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      <div className="flex items-center gap-2">
+                        {user.avatarUrl && (
+                          <img src={user.avatarUrl} alt={user.displayName} className="h-5 w-5 rounded-full" />
+                        )}
+                        <span>{user.displayName || user.email}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.assignedTo && (
+            <p className="text-sm text-destructive">{errors.assignedTo.message}</p>
           )}
         </div>
         <div className="grid grid-cols-3 gap-4">

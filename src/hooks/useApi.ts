@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useCallback } from "react"
-import { taskApi, projectApi, setAuthToken } from "@/services/api"
+import { taskApi, projectApi, userApi, setAuthToken } from "@/services/api"
 import { useAuth } from "@/hooks/useAuth"
 import type { Task, Project, CreateTaskInput, UpdateTaskInput, CreateProjectInput, UpdateProjectInput } from "@/types"
 
@@ -33,7 +33,7 @@ export function useAuthenticatedApi() {
 // Task hooks
 export function useTasks() {
   const { isAuthenticated, getAccessToken } = useAuth()
-  
+
   return useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
@@ -52,7 +52,7 @@ export function useTasks() {
 
 export function useTask(id: string) {
   const { isAuthenticated, getAccessToken } = useAuth()
-  
+
   return useQuery({
     queryKey: ["tasks", id],
     queryFn: async () => {
@@ -70,7 +70,7 @@ export function useTask(id: string) {
 export function useCreateTask() {
   const queryClient = useQueryClient()
   const { getAccessToken } = useAuth()
-  
+
   return useMutation({
     mutationFn: async (data: CreateTaskInput) => {
       const token = await getAccessToken()
@@ -88,7 +88,7 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const queryClient = useQueryClient()
   const { getAccessToken } = useAuth()
-  
+
   return useMutation({
     mutationFn: async ({ id, ...data }: UpdateTaskInput & { id: string }) => {
       const token = await getAccessToken()
@@ -107,7 +107,7 @@ export function useUpdateTask() {
 export function useDeleteTask() {
   const queryClient = useQueryClient()
   const { getAccessToken } = useAuth()
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       const token = await getAccessToken()
@@ -123,7 +123,7 @@ export function useDeleteTask() {
 // Project hooks
 export function useProjects() {
   const { isAuthenticated, getAccessToken } = useAuth()
-  
+
   return useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
@@ -141,7 +141,7 @@ export function useProjects() {
 
 export function useProject(id: string) {
   const { isAuthenticated, getAccessToken } = useAuth()
-  
+
   return useQuery({
     queryKey: ["projects", id],
     queryFn: async () => {
@@ -159,7 +159,7 @@ export function useProject(id: string) {
 export function useCreateProject() {
   const queryClient = useQueryClient()
   const { getAccessToken } = useAuth()
-  
+
   return useMutation({
     mutationFn: async (data: CreateProjectInput) => {
       const token = await getAccessToken()
@@ -177,7 +177,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const queryClient = useQueryClient()
   const { getAccessToken } = useAuth()
-  
+
   return useMutation({
     mutationFn: async ({ id, ...data }: UpdateProjectInput & { id: string }) => {
       const token = await getAccessToken()
@@ -196,7 +196,7 @@ export function useUpdateProject() {
 export function useDeleteProject() {
   const queryClient = useQueryClient()
   const { getAccessToken } = useAuth()
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       const token = await getAccessToken()
@@ -206,5 +206,24 @@ export function useDeleteProject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
     },
+  })
+}
+
+// User hooks
+export function useUsers() {
+  const { isAuthenticated, getAccessToken } = useAuth()
+
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      if (isAuthenticated) {
+        const token = await getAccessToken()
+        setAuthToken(userApi, token)
+      }
+      const response = await userApi.get("/users/list")
+      // Handle both { data: users } and direct array response
+      return Array.isArray(response.data) ? response.data : (response.data?.data || [])
+    },
+    enabled: isAuthenticated,
   })
 }
